@@ -31,10 +31,13 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // Configuración de CORS
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'https://maxwavex-web.vercel.app',
-    credentials: true
-}));
+app.use(
+  cors({
+    origin: ["https://maxwavex-web.vercel.app"], // dominio del frontend en Vercel
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
