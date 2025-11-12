@@ -5,18 +5,18 @@ dotenv.config();
 
 // Configuración de la base de datos
 const dbConfig = {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '1234567890',
-    database: process.env.DB_NAME || 'MAXWAVEX',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    reconnect: true,
-    charset: 'utf8mb4'
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  charset: 'utf8mb4',
+  ssl: {
+    rejectUnauthorized: false // <- necesario para Railway (SSL sin certificado)
+  }
 };
 
 // Crear pool de conexiones
