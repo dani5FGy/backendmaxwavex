@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 
 // Importar rutas
 import authRoutes from './routes/auth.js';
@@ -15,8 +16,10 @@ import gameRoutes from './routes/games.js';
 // Importar configuración de base de datos
 import { testConnection } from './config/database.js';
 
-// Configuración de variables de entorno
-dotenv.config();
+// Configuración de variables de entorno (solo en desarrollo)
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,17 +68,41 @@ app.get('/api/health', (req, res) => {
         status: 'OK',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        version: process.env.npm_package_version || '1.0.0'
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development'
     });
 });
 
-// Servir archivos estáticos en producción
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(join(__dirname, '../frontend/dist')));
+// Ruta raíz para verificar que el servidor está corriendo
+app.get('/', (req, res) => {
+    res.json({
+        message: 'MaxWaveX API is running',
+        status: 'OK',
+        endpoints: {
+            health: '/api/health',
+            auth: '/api/auth',
+            modules: '/api/modules',
+            progress: '/api/progress',
+            games: '/api/games'
+        }
+    });
+});
+
+// Servir archivos estáticos SOLO si existe la carpeta dist
+// (esto es para desarrollo local, no para Railway)
+const distPath = join(__dirname, '../frontend/dist');
+if (existsSync(distPath)) {
+    console.log('📁 Sirviendo archivos estáticos desde:', distPath);
+    app.use(express.static(distPath));
     
     app.get('*', (req, res) => {
-        res.sendFile(join(__dirname, '../frontend/dist/index.html'));
+        // Solo servir index.html para rutas que no sean de API
+        if (!req.path.startsWith('/api')) {
+            res.sendFile(join(distPath, 'index.html'));
+        }
     });
+} else {
+    console.log('ℹ️ No se encontró carpeta dist - API mode only');
 }
 
 // Middleware de manejo de errores
@@ -105,8 +132,8 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Manejo de rutas no encontradas
-app.use('*', (req, res) => {
+// Manejo de rutas no encontradas (solo para rutas de API)
+app.use('/api/*', (req, res) => {
     res.status(404).json({
         error: 'Ruta no encontrada',
         message: `La ruta ${req.originalUrl} no existe`
@@ -120,9 +147,9 @@ async function startServer() {
         await testConnection();
         console.log('✅ Conexión a la base de datos establecida');
         
-        app.listen(PORT, () => {
-            console.log(`🚀 Servidor ejecutándose en `);
-            console.log(`📖 API documentada en `);
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 Servidor ejecutándose en http://0.0.0.0:${PORT}`);
+            console.log(`📖 API documentada en http://0.0.0.0:${PORT}/api/health`);
             console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
         });
     } catch (error) {
