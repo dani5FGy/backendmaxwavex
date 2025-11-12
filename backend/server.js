@@ -121,8 +121,8 @@ async function startServer() {
         console.log('✅ Conexión a la base de datos establecida');
         
         app.listen(PORT, () => {
-            console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
-            console.log(`📖 API documentada en http://localhost:${PORT}/api/health`);
+            console.log(`🚀 Servidor ejecutándose en `);
+            console.log(`📖 API documentada en `);
             console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
         });
     } catch (error) {
