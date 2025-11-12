@@ -5,18 +5,19 @@ dotenv.config();
 
 // Configuración de la base de datos
 const dbConfig = {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+ host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   charset: 'utf8mb4',
-  ssl: {
-    rejectUnauthorized: false // <- necesario para Railway (SSL sin certificado)
-  }
+  connectTimeout: 60000, // 60 segundos
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: true
+  } : false
 };
 
 // Crear pool de conexiones
@@ -25,6 +26,14 @@ const pool = mysql.createPool(dbConfig);
 // Función para probar la conexión
 export const testConnection = async () => {
     try {
+        console.log('🔍 Intentando conectar a:', {
+            host: process.env.MYSQLHOST,
+            port: process.env.MYSQLPORT,
+            user: process.env.MYSQLUSER,
+            database: process.env.MYSQLDATABASE,
+            password: process.env.MYSQLPASSWORD ? '***SET***' : '***NOT SET***'
+        });
+        
         const connection = await pool.getConnection();
         await connection.ping();
         connection.release();
@@ -32,9 +41,11 @@ export const testConnection = async () => {
         return true;
     } catch (error) {
         console.error('❌ Error conectando a MySQL:', error.message);
+        console.error('Error completo:', error);
         throw error;
     }
 };
+
 
 // Función para ejecutar consultas
 export const query = async (sql, params = []) => {
